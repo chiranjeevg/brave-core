@@ -135,6 +135,57 @@
     "message": "Brave Rewards is having an issue. Please try again later.",
     "description": ""
   },
+  "rewardsPaymentCompleted": {
+    "message": "Your $amount$ $month$ rewards have arrived!",
+    "description": "",
+    "placeholders": {
+      "amount": {
+        "content": "$1"
+      },
+      "month": {
+        "content": "$2"
+      }
+    }
+  },
+  "rewardsPaymentPending": {
+    "message": "Your $amount$ $month$ rewards will arrive in $days$",
+    "description": "",
+    "placeholders": {
+      "amount": {
+        "content": "$1"
+      },
+      "month": {
+        "content": "$2"
+      },
+      "days": {
+        "content": "$3"
+      }
+    }
+  },
+  "rewardsPaymentProcessing": {
+    "message": "Your $amount$ $month$ rewards are on the way. Keep an eye out!",
+    "description": "",
+    "placeholders": {
+      "amount": {
+        "content": "$1"
+      },
+      "month": {
+        "content": "$2"
+      }
+    }
+  },
+  "rewardsPaymentNotArrived": {
+    "message": "Hasn’t arrived yet?  $link_begin$Check here$link_end$.",
+    "description": "",
+    "placeholders": {
+      "link_begin": {
+        "content": "$1"
+      },
+      "link_end": {
+        "content": "$2"
+      }
+    }
+  },
   "walletAccountLink": {
     "message": "Go to my $provider$ account",
     "description": "",
@@ -206,18 +257,6 @@
   "walletPending": {
     "message": "Pending",
     "description": ""
-  },
-  "walletPendingRewardsText": {
-    "message": "$amount$ payout begins processing in $days$",
-    "description": "",
-    "placeholders": {
-      "amount": {
-        "content": "$1"
-      },
-      "days": {
-        "content": "$2"
-      }
-    }
   },
   "walletRewardsFromAds": {
     "message": "Rewards from Ads",
