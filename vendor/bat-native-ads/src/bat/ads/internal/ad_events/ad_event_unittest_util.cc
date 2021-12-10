@@ -20,7 +20,7 @@ AdEventInfo BuildAdEvent(const CreativeAdInfo& creative_ad,
                          const ConfirmationType confirmation_type,
                          const base::Time& created_at) {
   AdEventInfo ad_event;
-  ad_event.uuid = base::GenerateGUID();
+  ad_event.uuid = base::GenerateRandomV4();
   ad_event.confirmation_type = confirmation_type;
   ad_event.creative_instance_id = creative_ad.creative_instance_id;
   ad_event.advertiser_id = creative_ad.advertiser_id;
@@ -33,12 +33,12 @@ AdEventInfo BuildAdEvent(const ConfirmationType confirmation_type) {
   AdEventInfo ad_event;
 
   ad_event.type = AdType::kAdNotification;
-  ad_event.uuid = base::GenerateGUID();
+  ad_event.uuid = base::GenerateRandomV4();
   ad_event.confirmation_type = confirmation_type;
-  ad_event.campaign_id = base::GenerateGUID();
-  ad_event.creative_set_id = base::GenerateGUID();
-  ad_event.creative_instance_id = base::GenerateGUID();
-  ad_event.advertiser_id = base::GenerateGUID();
+  ad_event.campaign_id = base::GenerateRandomV4();
+  ad_event.creative_set_id = base::GenerateRandomV4();
+  ad_event.creative_instance_id = base::GenerateRandomV4();
+  ad_event.advertiser_id = base::GenerateRandomV4();
   ad_event.created_at = Now();
 
   return ad_event;
@@ -63,7 +63,7 @@ AdEventInfo BuildAdEvent(const std::string& uuid,
 
 AdEventInfo BuildAdEvent(const std::string& creative_set_id,
                          const ConfirmationType confirmation_type) {
-  const std::string uuid = base::GenerateGUID();
+  const std::string uuid = base::GUID::GenerateRandomV4();
   return BuildAdEvent(uuid, creative_set_id, confirmation_type);
 }
 
