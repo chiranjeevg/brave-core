@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "base/strings/utf_string_conversions.h"
+#include "brave/browser/ui/brave_shields_data_controller.h"
 #include "brave/common/pref_names.h"
 #include "brave/components/brave_perf_predictor/browser/perf_predictor_tab_helper.h"
 #include "brave/components/brave_shields/browser/brave_shields_util.h"
@@ -212,6 +213,10 @@ void BraveShieldsWebContentsObserver::DispatchBlockedEventForWebContents(
     event_router->BroadcastEvent(std::move(event));
   }
 #endif
+  if (!web_contents)
+    return;
+  brave_shields::BraveShieldsDataController::FromWebContents(web_contents)
+      ->HandleItemBlocked(block_type, subresource);
 }
 #endif
 
@@ -252,6 +257,9 @@ void BraveShieldsWebContentsObserver::ReadyToCommitNavigation(
       // we only reset the counter for blocked URLs, not the one for scripts.
       blocked_url_paths_.clear();
     }
+    brave_shields::BraveShieldsDataController::FromWebContents(
+        navigation_handle->GetWebContents())
+        ->ClearAllResourcesList();
   }
 
   navigation_handle->GetWebContents()->ForEachRenderFrameHost(

@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "brave/browser/ui/brave_actions/brave_action_icon_with_badge_image_source.h"  // NOLINT
+#include "chrome/browser/ui/tabs/tab_strip_model.h"
 #include "chrome/browser/ui/views/chrome_layout_provider.h"
 #include "chrome/browser/ui/views/toolbar/toolbar_ink_drop_util.h"
 #include "components/grit/brave_components_resources.h"
@@ -26,6 +27,8 @@
 #include "ui/views/view.h"
 
 namespace {
+
+constexpr SkColor kBadgeBg = SkColorSetRGB(0x63, 0x64, 0x72);
 class BraveShieldsActionViewHighlightPathGenerator
     : public views::HighlightPathGenerator {
  public:
@@ -42,10 +45,11 @@ class BraveShieldsActionViewHighlightPathGenerator
 };
 }  // namespace
 
-BraveShieldsActionView::BraveShieldsActionView()
+BraveShieldsActionView::BraveShieldsActionView(TabStripModel* tab_strip_model)
     : LabelButton(base::BindRepeating(&BraveShieldsActionView::ButtonPressed,
                                       base::Unretained(this)),
                   std::u16string()) {
+  tab_strip_model_ = tab_strip_model;
   auto* ink_drop = views::InkDrop::Get(this);
   ink_drop->SetMode(views::InkDropHost::InkDropMode::ON);
   ink_drop->SetBaseColorCallback(base::BindRepeating(
@@ -56,32 +60,13 @@ BraveShieldsActionView::BraveShieldsActionView()
   SetHasInkDropActionOnClick(true);
   SetHorizontalAlignment(gfx::ALIGN_CENTER);
   ink_drop->SetVisibleOpacity(kToolbarInkDropVisibleOpacity);
+  tab_strip_model_->AddObserver(this);
 }
 
 BraveShieldsActionView::~BraveShieldsActionView() = default;
 
 void BraveShieldsActionView::Init() {
-  // Create badge-and-image source like an extension icon would
-  auto preferred_size = GetPreferredSize();
-  ui::ResourceBundle& rb = ui::ResourceBundle::GetSharedInstance();
-  std::unique_ptr<IconWithBadgeImageSource> image_source(
-      new BraveActionIconWithBadgeImageSource(preferred_size));
-  // Set icon on badge using actual extension icon resource
-  gfx::ImageSkia image;
-
-  const SkBitmap bitmap =
-      rb.GetImageNamed(IDR_BRAVE_SHIELDS_ICON_64).AsBitmap();
-  float scale = static_cast<float>(bitmap.width()) / kBraveActionGraphicSize;
-  image.AddRepresentation(gfx::ImageSkiaRep(bitmap, scale));
-  image_source->SetIcon(gfx::Image(image));
-  // TODO(nullhook): Create badge and set text on badge via pref text
-  gfx::ImageSkia icon(
-      gfx::Image(gfx::ImageSkia(std::move(image_source), preferred_size))
-          .AsImageSkia());
-  // Use badge-and-icon source for button's image in all states
-  SetImageModel(views::Button::STATE_NORMAL,
-                ui::ImageModel::FromImageSkia(icon));
-
+  UpdateIconState();
   views::HighlightPathGenerator::Install(
       this, std::make_unique<BraveShieldsActionViewHighlightPathGenerator>());
 }
@@ -100,6 +85,59 @@ SkPath BraveShieldsActionView::GetHighlightPath() const {
   return path;
 }
 
+std::unique_ptr<IconWithBadgeImageSource>
+BraveShieldsActionView::GetImageSource() {
+  auto preferred_size = GetPreferredSize();
+  std::unique_ptr<IconWithBadgeImageSource> image_source(
+      new BraveActionIconWithBadgeImageSource(preferred_size));
+  auto* web_contents = tab_strip_model_->GetActiveWebContents();
+  std::unique_ptr<IconWithBadgeImageSource::Badge> badge;
+  bool is_enabled = false;
+  std::string badge_text;
+
+  if (web_contents) {
+    auto* shields_data_ctrlr =
+        brave_shields::BraveShieldsDataController::FromWebContents(
+            web_contents);
+    int count = shields_data_ctrlr->GetTotalBlockedCount();
+
+    badge_text = count > 0 ? std::to_string(count) : std::string();
+    is_enabled = shields_data_ctrlr->GetIsBraveShieldsEnabled();
+
+    if (!badge_text.empty()) {
+      badge = std::make_unique<IconWithBadgeImageSource::Badge>(
+          badge_text, SK_ColorWHITE, kBadgeBg);
+    }
+  }
+
+  image_source->SetIcon(gfx::Image(GetIconImage(is_enabled)));
+  image_source->SetBadge(std::move(badge));
+
+  return image_source;
+}
+
+gfx::ImageSkia BraveShieldsActionView::GetIconImage(bool is_enabled) {
+  ui::ResourceBundle& rb = ui::ResourceBundle::GetSharedInstance();
+  gfx::ImageSkia image;
+  const SkBitmap bitmap =
+      rb.GetImageNamed(is_enabled ? IDR_BRAVE_SHIELDS_ICON_64
+                                  : IDR_BRAVE_SHIELDS_ICON_64_DISABLED)
+          .AsBitmap();
+  float scale = static_cast<float>(bitmap.width()) / kBraveActionGraphicSize;
+  image.AddRepresentation(gfx::ImageSkiaRep(bitmap, scale));
+  return image;
+}
+
+void BraveShieldsActionView::UpdateIconState() {
+  auto preferred_size = GetPreferredSize();
+  gfx::ImageSkia icon(
+      gfx::Image(gfx::ImageSkia(GetImageSource(), preferred_size))
+          .AsImageSkia());
+  // Use badge-and-icon source for button's image in all states
+  SetImageModel(views::Button::STATE_NORMAL,
+                ui::ImageModel::FromImageSkia(icon));
+}
+
 void BraveShieldsActionView::ButtonPressed() {
   NOTIMPLEMENTED();
 }
@@ -113,7 +151,28 @@ BraveShieldsActionView::CreateDefaultBorder() const {
 }
 
 void BraveShieldsActionView::Update() {
-  // We can get active webcontent's url and perform a GetBraveShieldsEnabled
-  // check
-  NOTIMPLEMENTED();
+  UpdateIconState();
+}
+
+void BraveShieldsActionView::OnResourcesCountChange(const int count) {
+  UpdateIconState();
+}
+
+void BraveShieldsActionView::OnTabStripModelChanged(
+    TabStripModel* tab_strip_model,
+    const TabStripModelChange& change,
+    const TabStripSelectionChange& selection) {
+  if (selection.active_tab_changed()) {
+    if (selection.new_contents) {
+      brave_shields::BraveShieldsDataController::FromWebContents(
+          selection.new_contents)
+          ->AddObserver(this);
+    }
+
+    if (selection.old_contents) {
+      brave_shields::BraveShieldsDataController::FromWebContents(
+          selection.old_contents)
+          ->RemoveObserver(this);
+    }
+  }
 }
