@@ -18,8 +18,10 @@
 #include "brave/components/brave_today/browser/brave_news_controller.h"
 #include "brave/components/brave_today/common/features.h"
 #include "chrome/browser/profiles/profile.h"
+#include "chrome/browser/ui/webui/new_tab_page/untrusted_source.h"
 #include "components/grit/brave_components_resources.h"
 #include "components/strings/grit/components_strings.h"
+#include "content/public/browser/url_data_source.h"
 #include "content/public/browser/web_ui_data_source.h"
 #include "ui/base/l10n/l10n_util.h"
 
@@ -48,11 +50,14 @@ BraveNewTabUI::BraveNewTabUI(content::WebUI* web_ui, const std::string& name)
         base::WrapUnique(new TopSitesMessageHandler(profile)));
   }
 
+  // For custom background images.
+  content::URLDataSource::Add(profile,
+                              std::make_unique<UntrustedSource>(profile));
+
   web_ui->OverrideTitle(l10n_util::GetStringUTF16(IDS_NEW_TAB_TITLE));
 }
 
-BraveNewTabUI::~BraveNewTabUI() {
-}
+BraveNewTabUI::~BraveNewTabUI() = default;
 
 void BraveNewTabUI::BindInterface(
     mojo::PendingReceiver<brave_news::mojom::BraveNewsController> receiver) {
