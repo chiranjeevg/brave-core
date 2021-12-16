@@ -325,8 +325,16 @@ void EphemeralStorageBrowserTest::ClearBroadcastMessage(
 }
 
 content::EvalJsResult EphemeralStorageBrowserTest::GetBroadcastMessage(
-    RenderFrameHost* frame) {
-  return content::EvalJs(frame, "self.bc_message");
+    RenderFrameHost* frame,
+    bool wait_for_non_empty) {
+  return content::EvalJs(
+      frame, base::StringPrintf("(async () => {"
+                                "  while (%s && self.bc_message == '') {"
+                                "    await new Promise(r => setTimeout(r, 10));"
+                                "  }"
+                                "  return self.bc_message;"
+                                "})();",
+                                wait_for_non_empty ? "true" : "false"));
 }
 
 IN_PROC_BROWSER_TEST_F(EphemeralStorageBrowserTest, StorageIsPartitioned) {
@@ -892,7 +900,7 @@ IN_PROC_BROWSER_TEST_F(EphemeralStorageBrowserTest,
 
     // Expect broadcast message is received in these frames.
     for (auto* rfh : test_case.expect_received) {
-      EXPECT_EQ(kTestMessage, GetBroadcastMessage(rfh));
+      EXPECT_EQ(kTestMessage, GetBroadcastMessage(rfh, true));
       processed_rfhs.insert(rfh);
     }
 
@@ -903,7 +911,7 @@ IN_PROC_BROWSER_TEST_F(EphemeralStorageBrowserTest,
                        << "WebContents URL: "
                        << wc_frames.first->GetLastCommittedURL()
                        << " RFH URL: " << rfh->GetLastCommittedURL());
-          EXPECT_NE(kTestMessage, GetBroadcastMessage(rfh));
+          EXPECT_NE(kTestMessage, GetBroadcastMessage(rfh, false));
         }
         ClearBroadcastMessage(rfh);
       }
