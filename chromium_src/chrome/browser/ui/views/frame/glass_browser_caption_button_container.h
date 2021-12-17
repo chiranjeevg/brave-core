@@ -17,7 +17,7 @@
 #undef GlassBrowserCaptionButtonContainer
 
 class GlassBrowserCaptionButtonContainer
-  : public GlassBrowserCaptionButtonContainer_ChromiumImpl {
+    : public GlassBrowserCaptionButtonContainer_ChromiumImpl {
  public:
   explicit GlassBrowserCaptionButtonContainer(
       GlassBrowserFrameView* frame_view);

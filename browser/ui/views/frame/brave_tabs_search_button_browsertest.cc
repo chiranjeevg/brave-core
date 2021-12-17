@@ -19,15 +19,13 @@
 #include "content/public/test/browser_test.h"
 
 class BraveTabsSearchButtonTest : public InProcessBrowserTest,
-                                    public ::testing::WithParamInterface<bool> {
+                                  public ::testing::WithParamInterface<bool> {
  public:
   BraveTabsSearchButtonTest() = default;
   ~BraveTabsSearchButtonTest() override = default;
 
 #if defined(OS_WIN)
-  bool IsWin10TabSearchCaptionButtonEnabled() {
-    return GetParam();
-  }
+  bool IsWin10TabSearchCaptionButtonEnabled() { return GetParam(); }
 
   void SetUp() override {
     if (IsWin10TabSearchCaptionButtonEnabled()) {
@@ -40,7 +38,7 @@ class BraveTabsSearchButtonTest : public InProcessBrowserTest,
     InProcessBrowserTest::SetUp();
   }
 
-protected:
+ protected:
   base::test::ScopedFeatureList scoped_feature_list_;
 #endif
 };
