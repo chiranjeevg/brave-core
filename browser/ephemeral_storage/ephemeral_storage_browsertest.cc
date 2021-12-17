@@ -311,8 +311,11 @@ void EphemeralStorageBrowserTest::CreateBroadcastChannel(
 void EphemeralStorageBrowserTest::SendBroadcastMessage(
     RenderFrameHost* frame,
     base::StringPiece message) {
+  // Wait before all channels are created, send a message, wait for the message
+  // to pass to all channels.
   EXPECT_TRUE(content::ExecJs(
       frame, base::StringPrintf("(async () => {"
+                                "  await new Promise(r => setTimeout(r, 200));"
                                 "  self.bc.postMessage('%s');"
                                 "  await new Promise(r => setTimeout(r, 200));"
                                 "})();",
